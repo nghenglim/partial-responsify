@@ -1,0 +1,40 @@
+{
+  "name": "partial-responsify",
+  "version": "0.2.2",
+  "description": "Validate and return partial response from field, just like graphql, but without the black magic.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "jest --coverage",
+    "build": "tslint --project . && tsc",
+    "prepublish": "tslint --project . && tsc"
+  },
+  "homepage": "https://github.com/nghenglim/partial-responsify",
+  "author": {
+    "name": "Liam",
+    "url": "https://www.leliam.com"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^23.3.5",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.10.4",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.3"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "preset": "ts-jest",
+    "testMatch": [
+      "<rootDir>/test/*.+(ts|tsx|js)"
+    ]
+  }
+}
