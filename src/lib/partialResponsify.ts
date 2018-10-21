@@ -122,7 +122,9 @@ export class PartialResponsify {
                 code: PartialResponsifyValidationErrorCode.UNSUPPORTED_FORMAT_TYPE,
             });
         }
-        if (responseFormat.type === "array" && !Array.isArray(result)) {
+        if (result === null) {
+            val = null;
+        } else if (responseFormat.type === "array" && !Array.isArray(result)) {
             errs.push({
                 name: prefix,
                 type: responseFormat.type,

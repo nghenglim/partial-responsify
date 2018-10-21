@@ -44,6 +44,38 @@ describe("Test main function", () => {
         });
         done();
     });
+    test("It should parse allow null by default from object", async (done) => {
+        const fields = "name,license";
+        const responseFormat: ResponseFormatType = {
+            fields: {
+                license: {
+                    type: "string",
+                },
+                name: {
+                    type: "string",
+                },
+            },
+            type: "object",
+        };
+
+        const result: any = {
+            author: {
+                name: {
+                    first: "Liam",
+                    last: "Ng",
+                },
+                url: "https://www.leliam.com",
+            },
+            license: null,
+            name: "partial-responsify",
+        };
+        const res = pr.parse<any>(fields, responseFormat, result);
+        expect(res).toEqual({
+            license: null,
+            name: "partial-responsify",
+        });
+        done();
+    });
     test("It should parse simple fields from array", async (done) => {
         const fields = "name";
         const responseFormat: ResponseFormatType = {
