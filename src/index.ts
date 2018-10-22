@@ -1,4 +1,2 @@
-export * from "./lib/partialResponsify";
-export * from "./lib/partialResponsifyParser";
-export * from "./lib/schemaGenerator";
+export * from "./lib";
 export * from "./errors/partialResponsifyValidationError";
