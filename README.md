@@ -17,11 +17,11 @@ A better way is to follow the test/*.test.ts
 
 - simple csv fields
 ~~~ts
-import { PartialResponsify, ResponseFormatType } from 'partial-responsify';
+import { PartialResponsify, PartialResponsifyParser, ResponseFormat } from "partial-responsify";
 
 const pr = new PartialResponsify();
 const fields = "name,coords";
-const responseFormat: ResponseFormatType = {
+const responseFormat: ResponseFormat = {
     fields: {
         coords: {
             items: {
@@ -56,6 +56,80 @@ const result = {
 };
 const res = pr.parse<any>(fields, responseFormat, result);
 console.log(res);
+/*
+{
+    coords: [[13.37, 1.337], [0, 0]],
+    license: "MIT",
+    name: "partial-responsify",
+}
+*/
+~~~
+- generate schema for use with swagger
+~~~ts
+import { ResponseFormat, SchemaGenerator } from "partial-responsify";
+const sgen = new SchemaGenerator();
+const responseFormat: ResponseFormat = {
+    items: {
+        fields: {
+            a: {
+                type: "number",
+            },
+            b: {
+                type: "string",
+            },
+            c: {
+                type: "integer",
+            },
+            d: {
+                format: "uuid",
+                type: "string",
+            },
+            e: {
+                fields: {
+                    a: {
+                        type: "number",
+                    },
+                },
+                type: "object",
+            },
+        },
+        type: "object",
+    },
+    type: "array",
+};
+const result = sgen.generate(responseFormat);
+console.log(result);
+/*
+{
+    items: {
+        properties: {
+            a: {
+                type: "number",
+            },
+            b: {
+                type: "string",
+            },
+            c: {
+                type: "integer",
+            },
+            d: {
+                format: "uuid",
+                type: "string",
+            },
+            e: {
+                properties: {
+                    a: {
+                        type: "number",
+                    },
+                },
+                type: "object",
+            },
+        },
+        type: "object",
+    },
+    type: "array",
+}
+*/
 ~~~
 - nested fields(WIP)
     - google way (WIP): `const fields = "name,license,author(name(first,last),url)"`;

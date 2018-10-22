@@ -1,16 +1,14 @@
 import { PartialResponsifyValidationError } from "../errors/partialResponsifyValidationError";
-export interface IParseFieldResult {
-    name: string;
-    type: "final" | "parent";
-}
+import { ParseFieldResult, PartialResponsifyParser } from "./partialResponsifyParser";
 interface IResponseFormatObjectFields {
-    [key: string]: ResponseFormatType;
+    [key: string]: ResponseFormat;
 }
 export interface IResponseFormatObject {
     fields: IResponseFormatObjectFields;
     type: "object";
 }
 export interface IResponseFormatString {
+    format?: string;
     type: "string";
 }
 export interface IResponseFormatInteger {
@@ -19,11 +17,8 @@ export interface IResponseFormatInteger {
 export interface IResponseFormatNumber {
     type: "number";
 }
-export interface IResponseFormatUuid {
-    type: "uuid";
-}
 export interface IResponseFormatArray {
-    items: ResponseFormatType;
+    items: ResponseFormat;
     type: "array";
 }
 export enum PartialResponsifyValidationErrorCode {
@@ -35,10 +30,10 @@ export enum PartialResponsifyValidationErrorCode {
     UNSUPPORTED_FORMAT_TYPE = "E5",
     INVALID_FIELD_FORMAT = "E4",
 }
-export type ResponseFormatType = IResponseFormatObject | IResponseFormatArray | IResponseFormatString |
-    IResponseFormatInteger | IResponseFormatNumber | IResponseFormatUuid;
+export type ResponseFormat = IResponseFormatObject | IResponseFormatArray | IResponseFormatString |
+    IResponseFormatInteger | IResponseFormatNumber;
 
-const test: ResponseFormatType = {
+const test: ResponseFormat = {
     fields: {
         name: {
             type: "string",
@@ -47,21 +42,33 @@ const test: ResponseFormatType = {
     type: "object",
 };
 export class PartialResponsify {
+    private parser: PartialResponsifyParser;
     // any custom type we should extend it with plugin
-    private supportedTypes: string[] = ["string", "array", "object", "number"];
-    public parse<T>(fields: string, responseFormat: ResponseFormatType, result: any): T {
+    private supportedTypes: string[] = ["string", "array", "object", "number", "integer"];
+    constructor() {
+        // dont make it injectable because the syntax have not confirm yet
+        this.parser = new PartialResponsifyParser();
+    }
+    public parse<T>(fields: string, responseFormat: ResponseFormat, result: any): T {
         try {
             if (typeof fields !== "string") {
                 throw new PartialResponsifyValidationError("Invalid field type", {
                     code: PartialResponsifyValidationErrorCode.INVALID_FIELD_TYPE,
                 });
-            } else if (!fields.match("^[a-zA-Z0-9\,]*$")) { // don't support nested yet
+            }
+            const {dups, invalidFormat, parseResults} = this.parser.parse(fields);
+            if (invalidFormat) { // don't support nested yet
                 throw new PartialResponsifyValidationError("Invalid field syntax", {
                     code: PartialResponsifyValidationErrorCode.INVALID_FIELD_SYNTAX,
                 });
             }
-            const parseFieldResults = this._parseFields(fields);
-            const {errs, val} = this._parseFormat(parseFieldResults, responseFormat, result, "");
+            if (dups.length) {
+                throw new PartialResponsifyValidationError(`Duplicate fields: ${dups.toString()}`, {
+                    code: PartialResponsifyValidationErrorCode.INVALID_FIELD_DUPS,
+                    dups,
+                });
+            }
+            const {errs, val} = this._parseFormat(parseResults, responseFormat, result, "");
             if (errs.length) {
                 throw new PartialResponsifyValidationError("Invalid result format", {
                     code: PartialResponsifyValidationErrorCode.INVALID_RESULT_FORMAT,
@@ -78,12 +85,28 @@ export class PartialResponsify {
             });
         }
     }
+    private _formatErrCheck(responseFormat: ResponseFormat, result: any): boolean {
+        if (responseFormat.type === "array" && !Array.isArray(result)) {
+            return true;
+        } else if (responseFormat.type === "object" && (typeof result !== "object" || Array.isArray(result))) {
+            return true;
+        } else if (responseFormat.type === "string" && typeof result !== "string") {
+            return true;
+        } else if (responseFormat.type === "number" && typeof result !== "number") {
+            return true;
+        } else if (responseFormat.type === "integer" && typeof result !== "number") {
+            return true;
+        } else if (responseFormat.type === "integer" && !Number.isInteger(result)) {
+            return true;
+        }
+        return false;
+    }
     private _parseFormat(
-        parseFieldResults: IParseFieldResult[], responseFormat: ResponseFormatType, result: any, prefix: string): {
+        parseFieldResults: ParseFieldResult[], responseFormat: ResponseFormat, result: any, prefix: string): {
             errs: any[];
             val: any;
         } {
-        const parseFieldResultMap: Map<string, IParseFieldResult[]> = new Map();
+        const parseFieldResultMap: Map<string, ParseFieldResult[]> = new Map();
         const fieldsToParse: string[] = []; // will get from current parseFieldResult
         const errs: any[] = [];
         const invalidFields: any[] = [];
@@ -124,22 +147,7 @@ export class PartialResponsify {
         }
         if (result === null) {
             val = null;
-        } else if (responseFormat.type === "array" && !Array.isArray(result)) {
-            errs.push({
-                name: prefix,
-                type: responseFormat.type,
-            });
-        } else if (responseFormat.type === "object" && (typeof result !== "object" || Array.isArray(result))) {
-            errs.push({
-                name: prefix,
-                type: responseFormat.type,
-            });
-        } else if (responseFormat.type === "string" && typeof result !== "string") {
-            errs.push({
-                name: prefix,
-                type: responseFormat.type,
-            });
-        } else if (responseFormat.type === "number" && typeof result !== "number") {
+        } else if (this._formatErrCheck(responseFormat, result)) {
             errs.push({
                 name: prefix,
                 type: responseFormat.type,
@@ -171,38 +179,5 @@ export class PartialResponsify {
             val = result;
         }
         return {errs, val};
-    }
-    private _parseFields(fields: string): IParseFieldResult[] {
-        // need better logic when implement nested field funtionality
-        const arr: string[] = fields.split(",");
-        const parseResults: IParseFieldResult[] = [];
-        for (const field of arr) {
-            parseResults.push({
-                name: field,
-                type: "final",
-            });
-        }
-        const dups = this.findDuplicate(parseResults, "");
-        if (dups.length) {
-            throw new PartialResponsifyValidationError(`Duplicate fields: ${dups.toString()}`, {
-                code: PartialResponsifyValidationErrorCode.INVALID_FIELD_DUPS,
-                dups,
-            });
-        }
-        return parseResults;
-    }
-    private findDuplicate(arr: IParseFieldResult[], prefix: string): string[] {
-        const o: string[] = [];
-        const dups: string[] = [];
-        const result: any = [];
-
-        for (const parseFieldResult of arr) {
-            if (o.indexOf(parseFieldResult.name) === -1) {
-                o.push(parseFieldResult.name);
-            } else {
-                dups.push(parseFieldResult.name);
-            }
-        }
-        return dups;
     }
 }

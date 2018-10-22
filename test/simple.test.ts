@@ -1,10 +1,10 @@
-import { PartialResponsify, ResponseFormatType } from "../src";
+import { PartialResponsify, PartialResponsifyParser, ResponseFormat } from "../src";
 const pr = new PartialResponsify();
 
 describe("Test main function", () => {
     test("It should parse simple fields from object", async (done) => {
         const fields = "name,coords";
-        const responseFormat: ResponseFormatType = {
+        const responseFormat: ResponseFormat = {
             fields: {
                 coords: {
                     items: {
@@ -46,7 +46,7 @@ describe("Test main function", () => {
     });
     test("It should parse allow null by default from object", async (done) => {
         const fields = "name,license";
-        const responseFormat: ResponseFormatType = {
+        const responseFormat: ResponseFormat = {
             fields: {
                 license: {
                     type: "string",
@@ -58,7 +58,7 @@ describe("Test main function", () => {
             type: "object",
         };
 
-        const result: any = {
+        const result = {
             author: {
                 name: {
                     first: "Liam",
@@ -66,7 +66,7 @@ describe("Test main function", () => {
                 },
                 url: "https://www.leliam.com",
             },
-            license: null,
+            license: null as string,
             name: "partial-responsify",
         };
         const res = pr.parse<any>(fields, responseFormat, result);
@@ -78,7 +78,7 @@ describe("Test main function", () => {
     });
     test("It should parse simple fields from array", async (done) => {
         const fields = "name";
-        const responseFormat: ResponseFormatType = {
+        const responseFormat: ResponseFormat = {
             items: {
                 fields: {
                     license: {
@@ -124,7 +124,7 @@ describe("Test main function", () => {
     });
     test("It should parse simple fields for coords object", async (done) => {
         const fields = "name,coords";
-        const responseFormat: ResponseFormatType = {
+        const responseFormat: ResponseFormat = {
             fields: {
                 geo: {
                     items: {
@@ -161,7 +161,7 @@ describe("Test main function", () => {
     });
     test("It should throw invalid object format", async (done) => {
         const fields = "name";
-        const responseFormat: ResponseFormatType = {
+        const responseFormat: ResponseFormat = {
             fields: {
                 license: {
                     type: "string",
@@ -191,7 +191,7 @@ describe("Test main function", () => {
     });
     test("It should throw invalid field format", async (done) => {
         const fields = "author";
-        const responseFormat: ResponseFormatType = {
+        const responseFormat: ResponseFormat = {
             fields: {
                 license: {
                     type: "string",
@@ -221,7 +221,7 @@ describe("Test main function", () => {
     });
     test("It should throw invalid string format", async (done) => {
         const fields = "license";
-        const responseFormat: ResponseFormatType = {
+        const responseFormat: ResponseFormat = {
             fields: {
                 license: {
                     type: "string",
@@ -251,7 +251,7 @@ describe("Test main function", () => {
     });
     test("It should throw invalid array format", async (done) => {
         const fields = "name";
-        const responseFormat: ResponseFormatType = {
+        const responseFormat: ResponseFormat = {
             fields: {
                 license: {
                     type: "string",
