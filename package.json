@@ -34,7 +34,7 @@
     },
     "preset": "ts-jest",
     "testMatch": [
-      "<rootDir>/test/*.+(ts|tsx|js)"
+      "<rootDir>/test/*.test.+(ts|tsx|js)"
     ]
   }
 }
