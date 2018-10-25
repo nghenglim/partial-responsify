@@ -80,20 +80,23 @@ describe("Test main function", () => {
         const fields = "name";
         const responseFormat: ResponseFormat = {
             items: {
-                fields: {
-                    license: {
-                        type: "string",
+                items: {
+                    fields: {
+                        license: {
+                            type: "string",
+                        },
+                        name: {
+                            type: "string",
+                        },
                     },
-                    name: {
-                        type: "string",
-                    },
+                    type: "object",
                 },
-                type: "object",
+                type: "array",
             },
             type: "array",
         };
 
-        const result = [{
+        const result = [[{
             author: {
                 name: {
                     first: "Liam",
@@ -113,13 +116,13 @@ describe("Test main function", () => {
             },
             license: "MIT",
             name: "partial-responsify",
-        }];
+        }]];
         const res = pr.parse<any>(fields, responseFormat, result);
-        expect(res).toEqual([{
+        expect(res).toEqual([[{
             name: "partial-responsify",
         }, {
             name: "partial-responsify",
-        }]);
+        }]]);
         done();
     });
     test("It should parse simple fields for coords object", async (done) => {

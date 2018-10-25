@@ -80,7 +80,7 @@ describe("Test Schema Generator", () => {
                     e: {
                         fields: {
                             a: {
-                                type: "number",
+                                type: "boolean",
                             },
                         },
                         type: "object",
@@ -110,7 +110,7 @@ describe("Test Schema Generator", () => {
                     e: {
                         properties: {
                             a: {
-                                type: "number",
+                                type: "boolean",
                             },
                         },
                         type: "object",

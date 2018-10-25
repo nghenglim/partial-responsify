@@ -1,7 +1,14 @@
 import { PartialResponsifyValidationError } from "../errors/partialResponsifyValidationError";
-import { ParseFieldResult, PartialResponsifyParser } from "./partialResponsifyParser";
+import {
+    IParseFieldResult,
+    PartialResponsifyParser,
+} from "./partialResponsifyParser";
 interface IResponseFormatObjectFields {
     [key: string]: ResponseFormat;
+}
+interface IParseResponseFormatTuple {
+    0: string[];
+    1: string;
 }
 export interface IResponseFormatObject {
     fields: IResponseFormatObjectFields;
@@ -13,6 +20,9 @@ export interface IResponseFormatString {
 }
 export interface IResponseFormatInteger {
     type: "integer";
+}
+export interface IResponseFormatBoolean {
+    type: "boolean";
 }
 export interface IResponseFormatNumber {
     type: "number";
@@ -31,7 +41,7 @@ export enum PartialResponsifyValidationErrorCode {
     INVALID_FIELD_FORMAT = "E4",
 }
 export type ResponseFormat = IResponseFormatObject | IResponseFormatArray | IResponseFormatString |
-    IResponseFormatInteger | IResponseFormatNumber;
+    IResponseFormatInteger | IResponseFormatNumber | IResponseFormatBoolean;
 
 const test: ResponseFormat = {
     fields: {
@@ -44,7 +54,7 @@ const test: ResponseFormat = {
 export class PartialResponsify {
     private parser: PartialResponsifyParser;
     // any custom type we should extend it with plugin
-    private supportedTypes: string[] = ["string", "array", "object", "number", "integer"];
+    private supportedTypes: string[] = ["string", "array", "object", "number", "integer", "boolean"];
     constructor() {
         // dont make it injectable because the syntax have not confirm yet
         this.parser = new PartialResponsifyParser();
@@ -68,9 +78,10 @@ export class PartialResponsify {
                     dups,
                 });
             }
-            const {errs, val} = this._parseFormat(parseResults, responseFormat, result, "");
+            const fieldsToParse = this.parseResponseFormat(parseResults, responseFormat, []);
+            const {errs, val} = this._parseFormat(fieldsToParse, responseFormat, result, []);
             if (errs.length) {
-                throw new PartialResponsifyValidationError("Invalid result format", {
+                throw new PartialResponsifyValidationError(`Invalid result format`, {
                     code: PartialResponsifyValidationErrorCode.INVALID_RESULT_FORMAT,
                     formatErrs: errs,
                 });
@@ -85,12 +96,87 @@ export class PartialResponsify {
             });
         }
     }
+    public parseResponseFormat(parseFieldResults: IParseFieldResult[], responseFormat: ResponseFormat,
+                               prefix: string[]): IParseResponseFormatTuple[] {
+        const fieldsToParse: IParseResponseFormatTuple[] = []; // will get from current parseFieldResult
+        const invalidFields: any[] = [];
+        const incompleteFields: any[] = [];
+        for (const parseFieldResult of parseFieldResults) {
+            if (parseFieldResult.children.length === 0) {
+                // the children need to read from the object
+                if (responseFormat.type === "object") {
+                    if (typeof responseFormat.fields[parseFieldResult.name] === "undefined") {
+                        invalidFields.push(parseFieldResult.name);
+                        continue;
+                    }
+                    fieldsToParse.push([prefix, parseFieldResult.name]);
+                } else if (responseFormat.type === "array") {
+                    fieldsToParse.push.apply(
+                        fieldsToParse,
+                        this.parseResponseFormat(
+                            [parseFieldResult], responseFormat.items, prefix),
+                    );
+                }
+            } else {
+                if (responseFormat.type === "object") {
+                    if (responseFormat.fields[parseFieldResult.name].type === "array") {
+                        fieldsToParse.push.apply(
+                            fieldsToParse,
+                            this.parseResponseFormat(
+                                parseFieldResults, responseFormat.fields[parseFieldResult.name], prefix),
+                        );
+                    } else if (responseFormat.fields[parseFieldResult.name].type === "object") {
+                        fieldsToParse.push.apply(
+                            fieldsToParse,
+                            this.parseResponseFormat(
+                                parseFieldResult.children, responseFormat.fields[parseFieldResult.name], prefix),
+                        );
+                    } else {
+                        fieldsToParse.push([prefix, parseFieldResult.name]);
+                    }
+                } else if (responseFormat.type === "array") {
+                    if (responseFormat.items.type === "array") {
+                        fieldsToParse.push.apply(
+                            fieldsToParse,
+                            this.parseResponseFormat(
+                                parseFieldResults, responseFormat.items, prefix),
+                        );
+                    } else if (responseFormat.items.type === "object") {
+                        fieldsToParse.push.apply(
+                            fieldsToParse,
+                            this.parseResponseFormat(
+                                parseFieldResult.children, responseFormat.items, prefix),
+                        );
+                    } else {
+                        fieldsToParse.push([prefix, parseFieldResult.name]);
+                    }
+                } else {
+                    invalidFields.push(parseFieldResult.name);
+                }
+            }
+        }
+        if (invalidFields.length) {
+            throw new PartialResponsifyValidationError(`Invalid fields: ${invalidFields.toString()}`, {
+                code: PartialResponsifyValidationErrorCode.INVALID_FIELD_FORMAT,
+                formatErrs: invalidFields,
+            });
+        }
+        if (incompleteFields.length) {
+            throw new PartialResponsifyValidationError(`Incomplete fields: ${incompleteFields.toString()}`, {
+                code: PartialResponsifyValidationErrorCode.INVALID_FIELD_FORMAT,
+                formatErrs: incompleteFields,
+            });
+        }
+        return fieldsToParse;
+    }
     private _formatErrCheck(responseFormat: ResponseFormat, result: any): boolean {
         if (responseFormat.type === "array" && !Array.isArray(result)) {
             return true;
         } else if (responseFormat.type === "object" && (typeof result !== "object" || Array.isArray(result))) {
             return true;
         } else if (responseFormat.type === "string" && typeof result !== "string") {
+            return true;
+        } else if (responseFormat.type === "boolean" && typeof result !== "boolean") {
             return true;
         } else if (responseFormat.type === "number" && typeof result !== "number") {
             return true;
@@ -101,43 +187,24 @@ export class PartialResponsify {
         }
         return false;
     }
+    private _arrEq(arr1: string[], arr2: string[]): boolean {
+        if (arr1.length === arr2.length) {
+            return true;
+        } else {
+            arr1.forEach((element: any, i: number) => {
+                if (arr1[i] !== arr2[i]) {
+                    return false;
+                }
+            });
+        }
+        return true;
+      }
     private _parseFormat(
-        parseFieldResults: ParseFieldResult[], responseFormat: ResponseFormat, result: any, prefix: string): {
+        fieldsToParse: IParseResponseFormatTuple[], responseFormat: ResponseFormat, result: any, prefix: string[]): {
             errs: any[];
             val: any;
         } {
-        const parseFieldResultMap: Map<string, ParseFieldResult[]> = new Map();
-        const fieldsToParse: string[] = []; // will get from current parseFieldResult
-        const errs: any[] = [];
-        const invalidFields: any[] = [];
-        for (const parseFieldResult of parseFieldResults) {
-            if (responseFormat.type === "object"
-                && typeof responseFormat.fields[parseFieldResult.name] === "undefined") {
-                invalidFields.push(prefix + parseFieldResult.name);
-                continue;
-            } else if (responseFormat.type === "object"
-                && typeof responseFormat.fields[parseFieldResult.name] !== "undefined") {
-                if (parseFieldResult.type === "final"
-                    && responseFormat.fields[parseFieldResult.name].type === "object") {
-                    invalidFields.push(prefix + parseFieldResult.name);
-                    continue;
-                }
-                if (parseFieldResult.type === "final"
-                    && responseFormat.fields[parseFieldResult.name].type === "array") {
-                    const tmp: any = responseFormat.fields[parseFieldResult.name];
-                    if (tmp.items === "object") {
-                        invalidFields.push(prefix + parseFieldResult.name);
-                        continue;
-                    }
-                }
-                fieldsToParse.push(parseFieldResult.name);
-            }
-        }
-        if (invalidFields.length) {
-            throw new PartialResponsifyValidationError(`Invalid fields: ${invalidFields.toString()}`, {
-                code: PartialResponsifyValidationErrorCode.INVALID_FIELD_FORMAT,
-            });
-        }
+        const errs: any = [];
         let val: any = result;
         if (this.supportedTypes.indexOf(responseFormat.type) === -1) {
             // we should catch this error during development, any new format should be extend by plugin
@@ -155,7 +222,8 @@ export class PartialResponsify {
         } else if (responseFormat.type === "array") {
             val = [];
             result.forEach((element: any, i: number) => {
-                const r = this._parseFormat(parseFieldResults, responseFormat.items, element, prefix + i + ".");
+                const r = this._parseFormat(
+                    fieldsToParse, responseFormat.items, element, prefix);
                 errs.push.apply(errs, r.errs);
                 val.push(r.val);
             });
@@ -167,11 +235,17 @@ export class PartialResponsify {
                         name: prefix,
                         type: responseFormat.type,
                     });
-                } else if (fieldsToParse.indexOf(key) !== -1) {
-                    const fieldFormat = responseFormat.fields[key];
-                    const r = this._parseFormat([], fieldFormat, result[key], prefix + key + ".");
-                    errs.push.apply(errs, r.errs);
-                    val[key] = r.val;
+                } else {
+                    for (const ftparse of fieldsToParse) {
+                        const ftprefix = ftparse[0];
+                        const ftkey = ftparse[1];
+                        if (ftkey === key && this._arrEq(ftprefix, prefix)) {
+                            const fieldFormat = responseFormat.fields[key];
+                            const r = this._parseFormat([], fieldFormat, result[key], prefix.concat(key));
+                            errs.push.apply(errs, r.errs);
+                            val[key] = r.val;
+                        }
+                    }
                 }
             });
         } else {

@@ -1,6 +1,6 @@
 import { ResponseFormat } from "./partialResponsify";
 type OpenApiSchema = IOpenApiSchemaString | IOpenApiSchemaInteger
-| IOpenApiSchemaNumber | IOpenApiSchemaObject | IOpenApiSchemaArray;
+| IOpenApiSchemaNumber | IOpenApiSchemaObject | IOpenApiSchemaArray | IOpenApiSchemaBoolean;
 export interface IOpenApiSchemaObject {
     type: "object";
     properties: IOpenApiSchemaProperties;
@@ -25,23 +25,25 @@ export interface IOpenApiSchemaNumber {
     type: "number";
     description?: string;
 }
+export interface IOpenApiSchemaBoolean {
+    type: "boolean";
+    description?: string;
+}
 
 export class SchemaGenerator {
     public generate(responseFormat: ResponseFormat): OpenApiSchema {
-        let object: OpenApiSchema;
-        const finalType = ["string", "integer", "number"];
         if (responseFormat.type === "object") {
             const properties: any = {};
             Object.keys(responseFormat.fields).forEach((key) => {
                 properties[key] = this.generate(responseFormat.fields[key]);
             });
-            return object = {
+            return {
                 properties,
                 type: "object",
             };
         }
         if (responseFormat.type === "array") {
-            return object = {
+            return {
                 items: this.generate(responseFormat.items),
                 type: "array",
             };
@@ -63,6 +65,11 @@ export class SchemaGenerator {
         if (responseFormat.type === "number") {
             return {
                 type: "number",
+            };
+        }
+        if (responseFormat.type === "boolean") {
+            return {
+                type: "boolean",
             };
         }
         // should support plugin schema here

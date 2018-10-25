@@ -11,11 +11,11 @@ describe("Test parser", () => {
     test("It should parse csv correctly", async (done) => {
         const result = prp.parse("a,b");
         expect(result.parseResults).toEqual([{
+            children: [],
             name: "a",
-            type: "final",
         }, {
+            children: [],
             name: "b",
-            type: "final",
         }]);
         done();
     });

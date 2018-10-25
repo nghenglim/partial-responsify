@@ -1,19 +1,13 @@
-export type ParseFieldResult = IParseFieldResultFinal | IParseFieldResultParent;
-export interface IParseFieldResultFinal {
+export interface IParseFieldResult {
+    children: IParseFieldResult[];
     name: string;
-    type: "final";
-}
-export interface IParseFieldResultParent {
-    children: ParseFieldResult[];
-    name: string;
-    type: "parent";
 }
 // we should refer to the response format to prevent the spammer
 export class PartialResponsifyParser {
     public parse(fields: string): {
         invalidFormat: boolean;
         dups: string[];
-        parseResults: ParseFieldResult[];
+        parseResults: IParseFieldResult[];
     } {
         if (!fields.match("^[a-zA-Z0-9\,]*$")) {
             return {
@@ -24,11 +18,11 @@ export class PartialResponsifyParser {
         }
         // need better logic when implement nested field funtionality
         const arr: string[] = fields.split(",");
-        const parseResults: ParseFieldResult[] = [];
+        const parseResults: IParseFieldResult[] = [];
         for (const field of arr) {
             parseResults.push({
+                children: [],
                 name: field,
-                type: "final",
             });
         }
         const dups = this.findDuplicate(parseResults, "");
@@ -38,7 +32,7 @@ export class PartialResponsifyParser {
             parseResults,
         };
     }
-    private findDuplicate(arr: ParseFieldResult[], prefix: string): string[] {
+    private findDuplicate(arr: IParseFieldResult[], prefix: string): string[] {
         const o: string[] = [];
         const dups: string[] = [];
         const result: any = [];
