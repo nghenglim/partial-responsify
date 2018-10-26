@@ -75,16 +75,9 @@ const result = {
 const res = pr.parseWithFieldsToParse<any>(fieldsToParse, responseFormat, result);
 console.log(res);
 /*
-{
-    author: {
-        name: {
-            first: "Liam",
-        },
-    },
-    coords: [[13.37, 1.337], [0, 0]],
-    license: "MIT",
-    name: "partial-responsify",
-}
+{ author: { name: { first: 'Liam' } },
+  coords: [ [ 13.37, 1.337 ], [ 0, 0 ] ],
+  name: 'partial-responsify' }
 */
 ~~~
 - generate schema for use with swagger
