@@ -15,20 +15,8 @@ describe("Test parse response format", () => {
             },
             type: "object",
         };
-
-        const result = [{
-            author: {
-                name: {
-                    first: "Liam",
-                    last: "Ng",
-                },
-                url: "https://www.leliam.com",
-            },
-            license: "MIT",
-            name: "partial-responsify",
-        }];
         try {
-            pr.parseResponseFormat(prp.parse(fields).parseResults, responseFormat, []);
+            pr.parseFields(fields, responseFormat);
             expect(false).toBe(true);
         } catch (err) {
             expect(err.formatErrs).toEqual(["nono"]);
@@ -54,20 +42,8 @@ describe("Test parse response format", () => {
             },
             type: "array",
         };
-
-        const result = [[{
-            author: {
-                name: {
-                    first: "Liam",
-                    last: "Ng",
-                },
-                url: "https://www.leliam.com",
-            },
-            license: "MIT",
-            name: "partial-responsify",
-        }]];
         try {
-            pr.parseResponseFormat(prp.parse(fields).parseResults, responseFormat, []);
+            pr.parseFields(fields, responseFormat);
             expect(false).toBe(true);
         } catch (err) {
             expect(err.formatErrs).toEqual(["nana"]);

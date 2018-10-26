@@ -61,24 +61,7 @@ export class PartialResponsify {
     }
     public parse<T>(fields: string, responseFormat: ResponseFormat, result: any): T {
         try {
-            if (typeof fields !== "string") {
-                throw new PartialResponsifyValidationError("Invalid field type", {
-                    code: PartialResponsifyValidationErrorCode.INVALID_FIELD_TYPE,
-                });
-            }
-            const {dups, invalidFormat, parseResults} = this.parser.parse(fields);
-            if (invalidFormat) { // don't support nested yet
-                throw new PartialResponsifyValidationError("Invalid field syntax", {
-                    code: PartialResponsifyValidationErrorCode.INVALID_FIELD_SYNTAX,
-                });
-            }
-            if (dups.length) {
-                throw new PartialResponsifyValidationError(`Duplicate fields: ${dups.toString()}`, {
-                    code: PartialResponsifyValidationErrorCode.INVALID_FIELD_DUPS,
-                    dups,
-                });
-            }
-            const fieldsToParse = this.parseResponseFormat(parseResults, responseFormat, []);
+            const fieldsToParse = this.parseFields(fields, responseFormat);
             const {errs, val} = this._parseFormat(fieldsToParse, responseFormat, result, []);
             if (errs.length) {
                 throw new PartialResponsifyValidationError(`Invalid result format`, {
@@ -96,8 +79,52 @@ export class PartialResponsify {
             });
         }
     }
-    public parseResponseFormat(parseFieldResults: IParseFieldResult[], responseFormat: ResponseFormat,
-                               prefix: string[]): IParseResponseFormatTuple[] {
+    public parseFields(fields: string, responseFormat: ResponseFormat): IParseResponseFormatTuple[] {
+        try {
+            if (typeof fields !== "string") {
+                throw new PartialResponsifyValidationError("Invalid field type", {
+                    code: PartialResponsifyValidationErrorCode.INVALID_FIELD_TYPE,
+                });
+            }
+            const {dups, parseResults} = this.parser.parse(fields);
+            if (dups.length) {
+                throw new PartialResponsifyValidationError(`Duplicate fields: ${dups.toString()}`, {
+                    code: PartialResponsifyValidationErrorCode.INVALID_FIELD_DUPS,
+                    dups,
+                });
+            }
+            return this._parseResponseFormat(parseResults, responseFormat, []);
+        } catch (err) {
+            if (err instanceof PartialResponsifyValidationError) {
+                throw err;
+            }
+            throw new PartialResponsifyValidationError(err.message, {
+                code: PartialResponsifyValidationErrorCode.DEFAULT_ERROR,
+            });
+        }
+    }
+    public parseWithFieldsToParse<T>(
+            fieldsToParse: IParseResponseFormatTuple[], responseFormat: ResponseFormat, result: any): T {
+        try {
+            const {errs, val} = this._parseFormat(fieldsToParse, responseFormat, result, []);
+            if (errs.length) {
+                throw new PartialResponsifyValidationError(`Invalid result format`, {
+                    code: PartialResponsifyValidationErrorCode.INVALID_RESULT_FORMAT,
+                    formatErrs: errs,
+                });
+            }
+            return val;
+        } catch (err) {
+            if (err instanceof PartialResponsifyValidationError) {
+                throw err;
+            }
+            throw new PartialResponsifyValidationError(err.message, {
+                code: PartialResponsifyValidationErrorCode.DEFAULT_ERROR,
+            });
+        }
+    }
+    private _parseResponseFormat(parseFieldResults: IParseFieldResult[], responseFormat: ResponseFormat,
+                                 prefix: string[]): IParseResponseFormatTuple[] {
         const fieldsToParse: IParseResponseFormatTuple[] = []; // will get from current parseFieldResult
         const invalidFields: any[] = [];
         const incompleteFields: any[] = [];
@@ -113,23 +140,31 @@ export class PartialResponsify {
                 } else if (responseFormat.type === "array") {
                     fieldsToParse.push.apply(
                         fieldsToParse,
-                        this.parseResponseFormat(
+                        this._parseResponseFormat(
                             [parseFieldResult], responseFormat.items, prefix),
                     );
                 }
             } else {
                 if (responseFormat.type === "object") {
+                    if (typeof responseFormat.fields[parseFieldResult.name] === "undefined") {
+                        invalidFields.push(parseFieldResult.name);
+                        continue;
+                    }
                     if (responseFormat.fields[parseFieldResult.name].type === "array") {
                         fieldsToParse.push.apply(
                             fieldsToParse,
-                            this.parseResponseFormat(
-                                parseFieldResults, responseFormat.fields[parseFieldResult.name], prefix),
+                            this._parseResponseFormat(
+                                [parseFieldResult],
+                                responseFormat.fields[parseFieldResult.name],
+                                prefix.concat([parseFieldResult.name])),
                         );
                     } else if (responseFormat.fields[parseFieldResult.name].type === "object") {
                         fieldsToParse.push.apply(
                             fieldsToParse,
-                            this.parseResponseFormat(
-                                parseFieldResult.children, responseFormat.fields[parseFieldResult.name], prefix),
+                            this._parseResponseFormat(
+                                parseFieldResult.children,
+                                responseFormat.fields[parseFieldResult.name],
+                                prefix.concat([parseFieldResult.name])),
                         );
                     } else {
                         fieldsToParse.push([prefix, parseFieldResult.name]);
@@ -138,13 +173,13 @@ export class PartialResponsify {
                     if (responseFormat.items.type === "array") {
                         fieldsToParse.push.apply(
                             fieldsToParse,
-                            this.parseResponseFormat(
+                            this._parseResponseFormat(
                                 parseFieldResults, responseFormat.items, prefix),
                         );
                     } else if (responseFormat.items.type === "object") {
                         fieldsToParse.push.apply(
                             fieldsToParse,
-                            this.parseResponseFormat(
+                            this._parseResponseFormat(
                                 parseFieldResult.children, responseFormat.items, prefix),
                         );
                     } else {
@@ -200,10 +235,11 @@ export class PartialResponsify {
         return true;
       }
     private _parseFormat(
-        fieldsToParse: IParseResponseFormatTuple[], responseFormat: ResponseFormat, result: any, prefix: string[]): {
+        fieldsToParseOri: IParseResponseFormatTuple[], responseFormat: ResponseFormat, result: any, prefix: string[]): {
             errs: any[];
             val: any;
         } {
+        const fieldsToParse = JSON.parse(JSON.stringify(fieldsToParseOri));
         const errs: any = [];
         let val: any = result;
         if (this.supportedTypes.indexOf(responseFormat.type) === -1) {
@@ -239,11 +275,21 @@ export class PartialResponsify {
                     for (const ftparse of fieldsToParse) {
                         const ftprefix = ftparse[0];
                         const ftkey = ftparse[1];
-                        if (ftkey === key && this._arrEq(ftprefix, prefix)) {
+                        const newPrefix = prefix.concat(key);
+                        if (ftprefix.length === 0 && ftkey === key) {
                             const fieldFormat = responseFormat.fields[key];
-                            const r = this._parseFormat([], fieldFormat, result[key], prefix.concat(key));
+                            const r = this._parseFormat([], fieldFormat, result[key], newPrefix);
                             errs.push.apply(errs, r.errs);
                             val[key] = r.val;
+                        } else if (ftprefix.length > 0) {
+                            if (ftprefix[0] === key) {
+                                ftprefix.shift();
+                                const fieldFormat = responseFormat.fields[key];
+                                const r = this._parseFormat(
+                                    [[ftprefix, ftkey]], fieldFormat, result[key], newPrefix);
+                                errs.push.apply(errs, r.errs);
+                                val[key] = r.val;
+                            }
                         }
                     }
                 }

@@ -1,36 +1,72 @@
+import {generate, Parser} from "pegjs";
+import { PartialResponsifyValidationError } from "../errors/partialResponsifyValidationError";
+import { PartialResponsifyValidationErrorCode } from "./partialResponsify";
+
 export interface IParseFieldResult {
     children: IParseFieldResult[];
     name: string;
 }
 // we should refer to the response format to prevent the spammer
 export class PartialResponsifyParser {
+    private parser: Parser;
+    constructor() {
+        // put here first, when things stabalized we should import the generated one instead
+        this.parser = generate(`
+            start = head: (Section) tail: (AddiSection)* { return [head].concat(tail) }
+            value_separator = ","
+            begin_children = "{"
+            end_children = "}"
+            AddiField = (value_separator v: (Field) {return v})
+            ChildrenSection = begin_children head:(Section) tail:(AddiSection)* end_children {
+            return [head].concat(tail)
+            }
+            Section
+            = head:Field children:(ChildrenSection)*
+                {
+                return children.length ? [head].concat(children) : head;
+                }
+            AddiSection = (value_separator v: (Section) {return v})
+            Field "field"
+            = [a-zA-Z][a-zA-Z0-9]* { return text(); }
+        `);
+    }
     public parse(fields: string): {
-        invalidFormat: boolean;
         dups: string[];
         parseResults: IParseFieldResult[];
     } {
-        if (!fields.match("^[a-zA-Z0-9\,]*$")) {
+        try {
+            const parseResults: IParseFieldResult[] = this.convertParserArr(this.parser.parse(fields));
+            const dups = this.findDuplicate(parseResults, "");
             return {
-                dups: [],
-                invalidFormat: true,
-                parseResults: [],
+                dups,
+                parseResults,
             };
-        }
-        // need better logic when implement nested field funtionality
-        const arr: string[] = fields.split(",");
-        const parseResults: IParseFieldResult[] = [];
-        for (const field of arr) {
-            parseResults.push({
-                children: [],
-                name: field,
+        } catch (err) {
+            throw new PartialResponsifyValidationError(`Invalid field syntax: ${err.message}`, {
+                code: PartialResponsifyValidationErrorCode.INVALID_FIELD_SYNTAX,
             });
         }
-        const dups = this.findDuplicate(parseResults, "");
-        return {
-            dups,
-            invalidFormat: false,
-            parseResults,
-        };
+    }
+    private convertParserArr(arr: any[]): IParseFieldResult[] {
+        const parseResults: any[] = [];
+        for (const section of arr) {
+            if (Array.isArray(section) && section.length === 2) {
+                parseResults.push({
+                    children: this.convertParserArr(section[1]),
+                    name: section[0],
+                });
+            } else if (Array.isArray(section) && section.length !== 2) {
+                throw new PartialResponsifyValidationError(`Parser logic error`, {
+                    code: PartialResponsifyValidationErrorCode.DEFAULT_ERROR,
+                });
+            } else {
+                parseResults.push({
+                    children: [],
+                    name: section,
+                });
+            }
+        }
+        return parseResults;
     }
     private findDuplicate(arr: IParseFieldResult[], prefix: string): string[] {
         const o: string[] = [];

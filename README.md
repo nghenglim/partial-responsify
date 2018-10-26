@@ -15,14 +15,30 @@ Build with typescript. (Will not even think of making this kind of library witho
 ## Usage
 A better way is to follow the test/*.test.ts
 
-- simple csv fields
+- simple csv with graphql like nested field
 ~~~ts
 import { PartialResponsify, PartialResponsifyParser, ResponseFormat } from "partial-responsify";
 
 const pr = new PartialResponsify();
-const fields = "name,coords";
+const fields = "name,coords,author{name{first}}";
 const responseFormat: ResponseFormat = {
     fields: {
+        author: {
+            fields: {
+                name: {
+                    fields: {
+                        first: {
+                            type: "string",
+                        },
+                        last: {
+                            type: "string",
+                        },
+                    },
+                    type: "object",
+                },
+            },
+            type: "object",
+        },
         coords: {
             items: {
                 items: {
@@ -41,7 +57,9 @@ const responseFormat: ResponseFormat = {
     },
     type: "object",
 };
+const fieldsToParse = pr.parseFields(fields, responseFormat);
 
+// and then you perform some logic and got the result
 const result = {
     author: {
         name: {
@@ -54,10 +72,15 @@ const result = {
     license: "MIT",
     name: "partial-responsify",
 };
-const res = pr.parse<any>(fields, responseFormat, result);
+const res = pr.parseWithFieldsToParse<any>(fieldsToParse, responseFormat, result);
 console.log(res);
 /*
 {
+    author: {
+        name: {
+            first: "Liam",
+        },
+    },
     coords: [[13.37, 1.337], [0, 0]],
     license: "MIT",
     name: "partial-responsify",
@@ -131,9 +154,8 @@ console.log(result);
 }
 */
 ~~~
-- nested fields(WIP)
-    - google way (WIP): `const fields = "name,license,author(name(first,last),url)"`;
-    - graphql way (WIP): `const fields = "name,license,author{name{first,last},url}"`;
+- nested fields
+    - graphql way: `const fields = "name,license,author{name{first,last},url}"`;
 
 ## Validation Handling
 In case of validation failure, it will return a PartialResponsifyValidationError. The error default with a message, but has sufficient fields to let you format into any language
@@ -142,5 +164,6 @@ In case of validation failure, it will return a PartialResponsifyValidationError
 Able to add additional validation by user in case it is not sufficient
 
 ## Still thinking
+- should we support google way: `const fields = "name,license,author(name(first,last),url)"`;
 - should we allow optional field?
 - should we validate additional type such as minLength, maxLength
