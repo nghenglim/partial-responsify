@@ -162,4 +162,49 @@ describe("Test nested fields", () => {
         });
         done();
     });
+    test("It should not throw error on deep nested fields from empty array", async (done) => {
+        const fields = "authors{name{first}},name";
+        const responseFormat: ResponseFormat = {
+            fields: {
+                authors: {
+                    items: {
+                        fields: {
+                            name: {
+                                fields: {
+                                    first: {
+                                        type: "string",
+                                    },
+                                },
+                                type: "object",
+                            },
+                        },
+                        type: "object",
+                    },
+                    type: "array",
+                },
+                license: {
+                    type: "string",
+                },
+                name: {
+                    type: "string",
+                },
+            },
+            type: "object",
+        };
+
+        const result = {
+            authors: [] as any,
+            coords: [[13.37, 1.337], [0, 0]],
+            license: "MIT",
+            name: "partial-responsify",
+        };
+        const fieldsToParse = pr.parseFields(fields, responseFormat);
+        expect(fieldsToParse).toEqual([[["authors", "name"], "first"], [[], "name"]]);
+        const res = pr.parseWithFieldsToParse(fieldsToParse, responseFormat, result);
+        expect(res).toEqual({
+            authors: [],
+            name: "partial-responsify",
+        });
+        done();
+    });
 });
