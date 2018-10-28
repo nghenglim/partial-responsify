@@ -10,9 +10,9 @@ Mainly for using with RESTful API gateway
 Build with typescript. (Will not even think of making this kind of library without typing)
 
 ## Installation
-`npm install partial-responsify`
+`npm install --save-exact  partial-responsify`
 
-Note, install the exact version or the patch version before the project pass 1.0, breaking change might happen in minor release pre 1.0
+Note: install the exact version or the patch version before the project pass 1.0, breaking change might happen in minor release pre 1.0
 
 ## Usage
 A better way is to follow the test/*.test.ts
