@@ -37,7 +37,7 @@ describe("Test main function", () => {
             license: "MIT",
             name: "partial-responsify",
         };
-        const res = pr.parse<any>(fields, responseFormat, result);
+        const res = pr.parseResult<any>(pr.parseFields(fields, responseFormat), responseFormat, result);
         expect(res).toEqual({
             coords: [[13.37, 1.337], [0, 0]],
             name: "partial-responsify",
@@ -69,7 +69,7 @@ describe("Test main function", () => {
             license: null as string,
             name: "partial-responsify",
         };
-        const res = pr.parse<any>(fields, responseFormat, result);
+        const res = pr.parseResult<any>(pr.parseFields(fields, responseFormat), responseFormat, result);
         expect(res).toEqual({
             license: null,
             name: "partial-responsify",
@@ -117,7 +117,7 @@ describe("Test main function", () => {
             license: "MIT",
             name: "partial-responsify",
         }]];
-        const res = pr.parse<any>(fields, responseFormat, result);
+        const res = pr.parseResult<any>(pr.parseFields(fields, responseFormat), responseFormat, result);
         expect(res).toEqual([[{
             name: "partial-responsify",
         }, {
@@ -158,7 +158,7 @@ describe("Test main function", () => {
             name: "partial-responsify",
         };
         expect(() => {
-            pr.parse<any>(fields, responseFormat, result);
+            const res = pr.parseResult<any>(pr.parseFields(fields, responseFormat), responseFormat, result);
         }).toThrow();
         done();
     });
@@ -188,7 +188,7 @@ describe("Test main function", () => {
             name: "partial-responsify",
         }];
         expect(() => {
-            pr.parse<any>(fields, responseFormat, result);
+            const res = pr.parseResult<any>(pr.parseFields(fields, responseFormat), responseFormat, result);
         }).toThrow();
         done();
     });
@@ -218,7 +218,7 @@ describe("Test main function", () => {
             name: "partial-responsify",
         };
         expect(() => {
-            pr.parse<any>(fields, responseFormat, result);
+            const res = pr.parseResult<any>(pr.parseFields(fields, responseFormat), responseFormat, result);
         }).toThrow();
         done();
     });
@@ -248,7 +248,7 @@ describe("Test main function", () => {
             name: "partial-responsify",
         };
         expect(() => {
-            pr.parse<any>(fields, responseFormat, result);
+            const res = pr.parseResult<any>(pr.parseFields(fields, responseFormat), responseFormat, result);
         }).toThrow();
         done();
     });
@@ -288,7 +288,7 @@ describe("Test main function", () => {
             name: "partial-responsify",
         }];
         expect(() => {
-            pr.parse<any>(fields, responseFormat, result);
+            const res = pr.parseResult<any>(pr.parseFields(fields, responseFormat), responseFormat, result);
         }).toThrow();
         done();
     });

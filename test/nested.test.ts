@@ -37,7 +37,7 @@ describe("Test nested fields", () => {
             name: "partial-responsify",
         };
         const fieldsToParse = pr.parseFields(fields, responseFormat);
-        const res = pr.parseWithFieldsToParse(fieldsToParse, responseFormat, result);
+        const res = pr.parseResult(fieldsToParse, responseFormat, result);
         expect(res).toEqual({
             author: {
                 url: "https://www.leliam.com",
@@ -86,7 +86,7 @@ describe("Test nested fields", () => {
             name: "partial-responsify",
         };
         const fieldsToParse = pr.parseFields(fields, responseFormat);
-        const res = pr.parseWithFieldsToParse(fieldsToParse, responseFormat, result);
+        const res = pr.parseResult(fieldsToParse, responseFormat, result);
         expect(res).toEqual({
             author: {
                 name: {
@@ -147,7 +147,7 @@ describe("Test nested fields", () => {
         };
         const fieldsToParse = pr.parseFields(fields, responseFormat);
         expect(fieldsToParse).toEqual([[["authors", "name"], "first"], [[], "name"]]);
-        const res = pr.parseWithFieldsToParse(fieldsToParse, responseFormat, result);
+        const res = pr.parseResult(fieldsToParse, responseFormat, result);
         expect(res).toEqual({
             authors: [{
                 name: {
@@ -200,7 +200,7 @@ describe("Test nested fields", () => {
         };
         const fieldsToParse = pr.parseFields(fields, responseFormat);
         expect(fieldsToParse).toEqual([[["authors", "name"], "first"], [[], "name"]]);
-        const res = pr.parseWithFieldsToParse(fieldsToParse, responseFormat, result);
+        const res = pr.parseResult(fieldsToParse, responseFormat, result);
         expect(res).toEqual({
             authors: [],
             name: "partial-responsify",

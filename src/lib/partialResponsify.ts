@@ -59,26 +59,6 @@ export class PartialResponsify {
         // dont make it injectable because the syntax have not confirm yet
         this.parser = new PartialResponsifyParser();
     }
-    public parse<T>(fields: string, responseFormat: ResponseFormat, result: any): T {
-        try {
-            const fieldsToParse = this.parseFields(fields, responseFormat);
-            const {errs, val} = this._parseFormat(fieldsToParse, responseFormat, result, []);
-            if (errs.length) {
-                throw new PartialResponsifyValidationError(`Invalid result format`, {
-                    code: PartialResponsifyValidationErrorCode.INVALID_RESULT_FORMAT,
-                    formatErrs: errs,
-                });
-            }
-            return val;
-        } catch (err) {
-            if (err instanceof PartialResponsifyValidationError) {
-                throw err;
-            }
-            throw new PartialResponsifyValidationError(err.message, {
-                code: PartialResponsifyValidationErrorCode.DEFAULT_ERROR,
-            });
-        }
-    }
     public parseFields(fields: string, responseFormat: ResponseFormat): IParseResponseFormatTuple[] {
         try {
             if (typeof fields !== "string") {
@@ -103,7 +83,7 @@ export class PartialResponsify {
             });
         }
     }
-    public parseWithFieldsToParse<T>(
+    public parseResult<T>(
             fieldsToParse: IParseResponseFormatTuple[], responseFormat: ResponseFormat, result: any): T {
         try {
             const {errs, val} = this._parseFormat(fieldsToParse, responseFormat, result, []);

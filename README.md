@@ -72,7 +72,7 @@ const result = {
     license: "MIT",
     name: "partial-responsify",
 };
-const res = pr.parseWithFieldsToParse<any>(fieldsToParse, responseFormat, result);
+const res = pr.parseResult<any>(fieldsToParse, responseFormat, result);
 console.log(res);
 /*
 { author: { name: { first: 'Liam' } },
