@@ -252,6 +252,8 @@ export class PartialResponsify {
                         type: responseFormat.type,
                     });
                 } else {
+                    // TODO: dont lazy add some type
+                    const samePrefixes: Map<string, any> = new Map();
                     for (const ftparse of fieldsToParse) {
                         const ftprefix = ftparse[0];
                         const ftkey = ftparse[1];
@@ -265,12 +267,26 @@ export class PartialResponsify {
                             if (ftprefix[0] === key) {
                                 ftprefix.shift();
                                 const fieldFormat = responseFormat.fields[key];
-                                const r = this._parseFormat(
-                                    [[ftprefix, ftkey]], fieldFormat, result[key], newPrefix);
-                                errs.push.apply(errs, r.errs);
-                                val[key] = r.val;
+                                if (samePrefixes.has(key)) {
+                                    const tmp = samePrefixes.get(key);
+                                    tmp.arr.push([ftprefix, ftkey]);
+                                    samePrefixes.set(key, tmp);
+                                } else {
+                                    samePrefixes.set(key, {
+                                        arr: [[ftprefix, ftkey]],
+                                        fieldFormat,
+                                        prefix: newPrefix,
+                                        result: result[key],
+                                    });
+                                }
                             }
                         }
+                    }
+                    for (const entry of samePrefixes.entries()) {
+                        const r = this._parseFormat(
+                            entry[1].arr, entry[1].fieldFormat, entry[1].result, entry[1].prefix);
+                        errs.push.apply(errs, r.errs);
+                        val[key] = r.val;
                     }
                 }
             });
