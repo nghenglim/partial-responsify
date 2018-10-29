@@ -134,7 +134,7 @@ export class PartialResponsify {
                         fieldsToParse.push.apply(
                             fieldsToParse,
                             this._parseResponseFormat(
-                                [parseFieldResult],
+                                parseFieldResult.children,
                                 responseFormat.fields[parseFieldResult.name],
                                 prefix.concat([parseFieldResult.name])),
                         );
@@ -154,13 +154,13 @@ export class PartialResponsify {
                         fieldsToParse.push.apply(
                             fieldsToParse,
                             this._parseResponseFormat(
-                                parseFieldResults, responseFormat.items, prefix),
+                                [parseFieldResult], responseFormat.items, prefix),
                         );
                     } else if (responseFormat.items.type === "object") {
                         fieldsToParse.push.apply(
                             fieldsToParse,
                             this._parseResponseFormat(
-                                parseFieldResult.children, responseFormat.items, prefix),
+                                [parseFieldResult], responseFormat.items, prefix),
                         );
                     } else {
                         fieldsToParse.push([prefix, parseFieldResult.name]);

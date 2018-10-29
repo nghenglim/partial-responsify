@@ -46,34 +46,37 @@ describe("Test nested fields", () => {
         });
         done();
     });
-    test("It should parse deep nested fields from object", async (done) => {
+    test("It should parse deep nested fields from array object", async (done) => {
         const fields = "author{name{first}},name";
         const responseFormat: ResponseFormat = {
-            fields: {
-                author: {
-                    fields: {
-                        name: {
-                            fields: {
-                                first: {
-                                    type: "string",
+            items: {
+                fields: {
+                    author: {
+                        fields: {
+                            name: {
+                                fields: {
+                                    first: {
+                                        type: "string",
+                                    },
                                 },
+                                type: "object",
                             },
-                            type: "object",
                         },
+                        type: "object",
                     },
-                    type: "object",
+                    license: {
+                        type: "string",
+                    },
+                    name: {
+                        type: "string",
+                    },
                 },
-                license: {
-                    type: "string",
-                },
-                name: {
-                    type: "string",
-                },
+                type: "object",
             },
-            type: "object",
+            type: "array",
         };
 
-        const result = {
+        const result = [{
             author: {
                 name: {
                     first: "Liam",
@@ -84,17 +87,18 @@ describe("Test nested fields", () => {
             coords: [[13.37, 1.337], [0, 0]],
             license: "MIT",
             name: "partial-responsify",
-        };
+        }];
         const fieldsToParse = pr.parseFields(fields, responseFormat);
+        expect(fieldsToParse).toEqual([[["author", "name"], "first"], [[], "name"]]);
         const res = pr.parseResult(fieldsToParse, responseFormat, result);
-        expect(res).toEqual({
+        expect(res).toEqual([{
             author: {
                 name: {
                     first: "Liam",
                 },
             },
             name: "partial-responsify",
-        });
+        }]);
         done();
     });
     test("It should parse deep nested fields from object array", async (done) => {
