@@ -19,9 +19,14 @@ A better way is to follow the test/*.test.ts
 
 - simple csv with graphql like nested field
 ~~~ts
-import { PartialResponsify, PartialResponsifyParser, ResponseFormat } from "partial-responsify";
+import { PartialResponsify, ResponseFormat } from "partial-responsify";
 
+// ideally should be inside DI
 const pr = new PartialResponsify();
+
+// it is normally inside ctx.query for Koa
+// default don't support whitespace or - or _
+// (normally should be camelcase?)
 const fields = "name,coords,author{name{first}}";
 const responseFormat: ResponseFormat = {
     fields: {
@@ -59,7 +64,10 @@ const responseFormat: ResponseFormat = {
     },
     type: "object",
 };
+
+// you can use this fieldsToParse to track the fields usage
 const fieldsToParse = pr.parseFields(fields, responseFormat);
+console.log(fieldsToParse);
 
 // and then you perform some logic and got the result
 const result = {
@@ -77,6 +85,10 @@ const result = {
 const res = pr.parseResult<any>(fieldsToParse, responseFormat, result);
 console.log(res);
 /*
+the result should be:
+[ [ [], 'name' ],
+  [ [], 'coords' ],
+  [ [ 'author', 'name' ], 'first' ] ]
 { author: { name: { first: 'Liam' } },
   coords: [ [ 13.37, 1.337 ], [ 0, 0 ] ],
   name: 'partial-responsify' }
