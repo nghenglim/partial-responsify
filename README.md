@@ -163,6 +163,7 @@ console.log(result);
 ~~~
 - nested fields
     - graphql way: `const fields = "name,license,author{name{first,last},url}"`;
+- generate example string to get full response based on `ResponseBody` with `FieldsExampleGenerator`
 
 ## Validation Handling
 In case of validation failure, it will return a PartialResponsifyValidationError. The error default with a message, but has sufficient fields to let you format into any language

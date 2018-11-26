@@ -43,14 +43,6 @@ export enum PartialResponsifyValidationErrorCode {
 export type ResponseFormat = IResponseFormatObject | IResponseFormatArray | IResponseFormatString |
     IResponseFormatInteger | IResponseFormatNumber | IResponseFormatBoolean;
 
-const test: ResponseFormat = {
-    fields: {
-        name: {
-            type: "string",
-        },
-    },
-    type: "object",
-};
 export class PartialResponsify {
     private parser: PartialResponsifyParser;
     // any custom type we should extend it with plugin
