@@ -46,6 +46,38 @@ describe("Test nested fields", () => {
         });
         done();
     });
+    test("It should parse nested fields from object with empty json", async (done) => {
+        const fields = "author{url},name";
+        const responseFormat: ResponseFormat = {
+            fields: {
+                author: {
+                    fields: {
+                        url: {
+                            type: "string",
+                        },
+                    },
+                    type: "object",
+                },
+                license: {
+                    type: "string",
+                },
+                name: {
+                    type: "string",
+                },
+            },
+            type: "object",
+        };
+
+        const result = {
+        };
+        const fieldsToParse = pr.parseFields(fields, responseFormat);
+        const res = pr.parseResult(fieldsToParse, responseFormat, result);
+        expect(res).toEqual({
+            author: null,
+            name: null,
+        });
+        done();
+    });
     test("It should parse deep nested fields from array object", async (done) => {
         const fields = "author{name{first,last}},name";
         const responseFormat: ResponseFormat = {

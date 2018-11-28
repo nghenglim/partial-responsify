@@ -238,48 +238,44 @@ export class PartialResponsify {
         } else if (responseFormat.type === "object") {
             val = {};
             Object.keys(responseFormat.fields).forEach((key) => {
-                if (typeof result[key] === undefined) {
-                    errs.push({
-                        name: prefix,
-                        type: responseFormat.type,
-                    });
-                } else {
-                    // TODO: dont lazy add some type
-                    const samePrefixes: Map<string, any> = new Map();
-                    for (const ftparse of fieldsToParse) {
-                        const ftprefix = ftparse[0];
-                        const ftkey = ftparse[1];
-                        const newPrefix = prefix.concat(key);
-                        if (ftprefix.length === 0 && ftkey === key) {
+                if (typeof result[key] === "undefined") {
+                    result[key] = null;
+                }
+                // TODO: dont lazy add some type
+                const samePrefixes: Map<string, any> = new Map();
+                for (const ftparse of fieldsToParse) {
+                    const ftprefix = ftparse[0];
+                    const ftkey = ftparse[1];
+                    const newPrefix = prefix.concat(key);
+                    if (ftprefix.length === 0 && ftkey === key) {
+                        const fieldFormat = responseFormat.fields[key];
+                        const r = this._parseFormat([], fieldFormat, result[key], newPrefix);
+                        errs.push.apply(errs, r.errs);
+                        val[key] = r.val;
+                    } else if (ftprefix.length > 0) {
+                        if (ftprefix[0] === key) {
+                            ftprefix.shift();
                             const fieldFormat = responseFormat.fields[key];
-                            const r = this._parseFormat([], fieldFormat, result[key], newPrefix);
-                            errs.push.apply(errs, r.errs);
-                            val[key] = r.val;
-                        } else if (ftprefix.length > 0) {
-                            if (ftprefix[0] === key) {
-                                ftprefix.shift();
-                                const fieldFormat = responseFormat.fields[key];
-                                if (samePrefixes.has(key)) {
-                                    const tmp = samePrefixes.get(key);
-                                    tmp.arr.push([ftprefix, ftkey]);
-                                    samePrefixes.set(key, tmp);
-                                } else {
-                                    samePrefixes.set(key, {
-                                        arr: [[ftprefix, ftkey]],
-                                        fieldFormat,
-                                        prefix: newPrefix,
-                                        result: result[key],
-                                    });
-                                }
+                            if (samePrefixes.has(key)) {
+                                const tmp = samePrefixes.get(key);
+                                tmp.arr.push([ftprefix, ftkey]);
+                                samePrefixes.set(key, tmp);
+                            } else {
+                                samePrefixes.set(key, {
+                                    arr: [[ftprefix, ftkey]],
+                                    fieldFormat,
+                                    prefix: newPrefix,
+                                    result: result[key],
+                                });
                             }
                         }
                     }
-                    for (const entry of samePrefixes.entries()) {
-                        const r = this._parseFormat(
-                            entry[1].arr, entry[1].fieldFormat, entry[1].result, entry[1].prefix);
-                        errs.push.apply(errs, r.errs);
-                        val[key] = r.val;
-                    }
+                }
+                for (const entry of samePrefixes.entries()) {
+                    const r = this._parseFormat(
+                        entry[1].arr, entry[1].fieldFormat, entry[1].result, entry[1].prefix);
+                    errs.push.apply(errs, r.errs);
+                    val[key] = r.val;
                 }
             });
         } else {
