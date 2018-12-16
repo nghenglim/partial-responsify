@@ -8,7 +8,7 @@ export class FieldsExampleGenerator {
         // future use here to choose various type of style (such as use () or {})
     }
     public generate(responseFormat: ResponseFormat) {
-        if (responseFormat.type === "object") {
+        if (responseFormat.type === "object" || responseFormat.type === "array") {
             return this._generate(responseFormat, "");
         } else {
             return "";

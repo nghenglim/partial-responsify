@@ -1,6 +1,6 @@
 {
   "name": "partial-responsify",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Validate and return partial response from field, just like graphql, but without the black magic.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
