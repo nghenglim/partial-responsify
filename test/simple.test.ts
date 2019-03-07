@@ -3,7 +3,7 @@ const pr = new PartialResponsify();
 
 describe("Test main function", () => {
     test("It should parse simple fields from object", async (done) => {
-        const fields = "name,coords";
+        const fields = "name,coords,payload";
         const responseFormat: ResponseFormat = {
             fields: {
                 coords: {
@@ -21,6 +21,9 @@ describe("Test main function", () => {
                 name: {
                     type: "string",
                 },
+                payload: {
+                    type: "any",
+                },
             },
             type: "object",
         };
@@ -36,16 +39,32 @@ describe("Test main function", () => {
             coords: [[13.37, 1.337], [0, 0]],
             license: "MIT",
             name: "partial-responsify",
+            payload: {
+                a: 1,
+                b: "23",
+                c: [45],
+                d: {
+                    e: 6,
+                },
+            },
         };
         const res = pr.parseResult<any>(pr.parseFields(fields, responseFormat), responseFormat, result);
         expect(res).toEqual({
             coords: [[13.37, 1.337], [0, 0]],
             name: "partial-responsify",
+            payload: {
+                a: 1,
+                b: "23",
+                c: [45],
+                d: {
+                    e: 6,
+                },
+            },
         });
         done();
     });
     test("It should return null from empty json", async (done) => {
-        const fields = "name,license";
+        const fields = "name,license,payload";
         const responseFormat: ResponseFormat = {
             fields: {
                 license: {
@@ -53,6 +72,9 @@ describe("Test main function", () => {
                 },
                 name: {
                     type: "string",
+                },
+                payload: {
+                    type: "any",
                 },
             },
             type: "object",
@@ -64,6 +86,7 @@ describe("Test main function", () => {
         expect(res).toEqual({
             license: null,
             name: null,
+            payload: null,
         });
         done();
     });

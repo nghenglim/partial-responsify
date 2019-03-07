@@ -3,11 +3,14 @@ const pr = new PartialResponsify();
 
 describe("Test nested fields", () => {
     test("It should parse nested fields from object", async (done) => {
-        const fields = "author{url},name";
+        const fields = "author{payload,url},name";
         const responseFormat: ResponseFormat = {
             fields: {
                 author: {
                     fields: {
+                        payload: {
+                            type: "any",
+                        },
                         url: {
                             type: "string",
                         },
@@ -30,6 +33,14 @@ describe("Test nested fields", () => {
                     first: "Liam",
                     last: "Ng",
                 },
+                payload: {
+                    a: 1,
+                    b: "23",
+                    c: [45],
+                    d: {
+                        e: 6,
+                    },
+                },
                 url: "https://www.leliam.com",
             },
             coords: [[13.37, 1.337], [0, 0]],
@@ -40,6 +51,14 @@ describe("Test nested fields", () => {
         const res = pr.parseResult(fieldsToParse, responseFormat, result);
         expect(res).toEqual({
             author: {
+                payload: {
+                    a: 1,
+                    b: "23",
+                    c: [45],
+                    d: {
+                        e: 6,
+                    },
+                },
                 url: "https://www.leliam.com",
             },
             name: "partial-responsify",

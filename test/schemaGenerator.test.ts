@@ -85,6 +85,9 @@ describe("Test Schema Generator", () => {
                         },
                         type: "object",
                     },
+                    f: {
+                        type: "any",
+                    },
                 },
                 type: "object",
             },
@@ -115,6 +118,7 @@ describe("Test Schema Generator", () => {
                         },
                         type: "object",
                     },
+                    f: {},
                 },
                 type: "object",
             },

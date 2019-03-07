@@ -24,6 +24,9 @@ export interface IResponseFormatInteger {
 export interface IResponseFormatBoolean {
     type: "boolean";
 }
+export interface IResponseFormatAny {
+    type: "any";
+}
 export interface IResponseFormatNumber {
     type: "number";
 }
@@ -41,12 +44,11 @@ export enum PartialResponsifyValidationErrorCode {
     INVALID_FIELD_FORMAT = "E4",
 }
 export type ResponseFormat = IResponseFormatObject | IResponseFormatArray | IResponseFormatString |
-    IResponseFormatInteger | IResponseFormatNumber | IResponseFormatBoolean;
+    IResponseFormatInteger | IResponseFormatNumber | IResponseFormatBoolean | IResponseFormatAny;
 
 export class PartialResponsify {
     private parser: PartialResponsifyParser;
-    // any custom type we should extend it with plugin
-    private supportedTypes: string[] = ["string", "array", "object", "number", "integer", "boolean"];
+    private supportedTypes: string[] = ["string", "array", "object", "number", "integer", "boolean", "any"];
     constructor() {
         // dont make it injectable because the syntax have not confirm yet
         this.parser = new PartialResponsifyParser();
@@ -279,7 +281,6 @@ export class PartialResponsify {
                 }
             });
         } else {
-            // plugin should be runned before this
             val = result;
         }
         return {errs, val};

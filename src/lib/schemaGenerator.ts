@@ -1,6 +1,7 @@
 import { ResponseFormat } from "./partialResponsify";
 type OpenApiSchema = IOpenApiSchemaString | IOpenApiSchemaInteger
-| IOpenApiSchemaNumber | IOpenApiSchemaObject | IOpenApiSchemaArray | IOpenApiSchemaBoolean;
+| IOpenApiSchemaNumber | IOpenApiSchemaObject | IOpenApiSchemaArray | IOpenApiSchemaBoolean
+| IOpenApiSchemaAny;
 export interface IOpenApiSchemaObject {
     type: "object";
     properties: IOpenApiSchemaProperties;
@@ -27,6 +28,9 @@ export interface IOpenApiSchemaNumber {
 }
 export interface IOpenApiSchemaBoolean {
     type: "boolean";
+    description?: string;
+}
+export interface IOpenApiSchemaAny {
     description?: string;
 }
 
@@ -71,6 +75,9 @@ export class SchemaGenerator {
             return {
                 type: "boolean",
             };
+        }
+        if (responseFormat.type === "any") {
+            return {};
         }
         // should support plugin schema here
         throw new Error("unsupported responseFormat type");
